@@ -1,0 +1,10 @@
+$kind: collection
+name: Road Master API
+description: Pruebas del backend Node + Express + MySQL para la actividad.
+variables:
+  base_url: http://localhost:5000/api
+  token: ""
+  producto_id: "1"
+  usuario_id: "1"
+  imagen_path: ""
+  random_doc: ""

@@ -1,0 +1,26 @@
+$kind: http-request
+url: "{{base_url}}/auth/registro"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "Cliente Postman",
+      "apellido": "Prueba",
+      "tipoDocumento": "CC",
+      "numeroDocumento": "{{random_doc}}",
+      "direccion": "Calle 1 # 1-1",
+      "telefono": "3000000001",
+      "email": "cliente{{$timestamp}}@correo.com",
+      "password": "Cliente123!"
+    }
+scripts:
+  - type: beforeRequest
+    code: pm.collectionVariables.set('random_doc', String(Date.now()).slice(-9));
+    language: text/javascript
+  - type: afterResponse
+    code: pm.test('Registro correcto', function () { pm.response.to.have.status(201); });
+    language: text/javascript
+order: 2000

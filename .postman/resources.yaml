@@ -1,0 +1,14 @@
+# Use this workspace to collaborate
+workspace:
+  id: f239da8c-8021-451a-83e4-2f9523e0bb5c
+
+localResources:
+  collections:
+    - ../reacttercer/postman/road-master-api.postman_collection.json
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/Road Master API: d7e5f3c9-fa9a-4c7f-b8a8-730ed70b7269
+    ../postman/collections/Road Master API Copy: 2f442cc0-8794-4209-9cf8-3085043c38ba

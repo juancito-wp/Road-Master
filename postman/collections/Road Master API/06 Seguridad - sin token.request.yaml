@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{base_url}}/usuarios"
+method: GET
+scripts:
+  - type: afterResponse
+    code: pm.test('Ruta protegida', function () { pm.expect([401, 403]).to.include(pm.response.code); });
+    language: text/javascript
+order: 6000

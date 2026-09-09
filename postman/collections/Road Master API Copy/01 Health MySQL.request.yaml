@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{base_url}}/health"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('Servidor responde', function () { pm.response.to.have.status(200); });
+      pm.test('MySQL conectado', function () { pm.expect(pm.response.json().status).to.eql('OK'); });
+    language: text/javascript
+order: 5000

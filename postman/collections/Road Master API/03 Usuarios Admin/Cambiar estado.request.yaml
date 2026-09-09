@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{base_url}}/usuarios/{{usuario_id}}/estado"
+method: PATCH
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "estado": "inactivo"
+    }
+order: 3000

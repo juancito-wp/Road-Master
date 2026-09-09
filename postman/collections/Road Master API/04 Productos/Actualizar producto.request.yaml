@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{base_url}}/productos/{{producto_id}}"
+method: PUT
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "Modelo actualizado",
+      "marca": "Road Master",
+      "precio": 260000000,
+      "categoria": "Carga pesada",
+      "descripcion": "Actualizado desde Postman"
+    }
+order: 3000

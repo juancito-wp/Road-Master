@@ -1,0 +1,78 @@
+INFO:     Will watch for changes in these directories: ['C:\\Users\\Valeria\\Desktop\\Road_Master\\reacttercer']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [22656] using WatchFiles
+INFO:     Started server process [17816]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:64457 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64461 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64463 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60362 - "GET /api/usuarios HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:59418 - "GET /api/modelos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55949 - "OPTIONS /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57870 - "OPTIONS /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54883 - "OPTIONS /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50264 - "OPTIONS /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63175 - "OPTIONS /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55005 - "OPTIONS /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55005 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55005 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63175 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50264 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:63175 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:50264 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51172 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58506 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:58506 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51172 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49961 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49961 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49660 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49660 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49660 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49660 - "GET /api/usuarios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49660 - "GET /api/servicios HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:49660 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62232 - "POST /api/auth/login HTTP/1.1" 422 Unprocessable Content
+INFO:     127.0.0.1:62243 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53520 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53520 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53520 - "OPTIONS /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64851 - "OPTIONS /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63770 - "OPTIONS /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53520 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53520 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64851 - "GET /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63770 - "GET /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64851 - "GET /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63770 - "GET /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63488 - "GET /api/usuarios HTTP/1.1" 403 Forbidden
+INFO:     127.0.0.1:52583 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "OPTIONS /api/solicitudes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "OPTIONS /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64983 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64983 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "GET /api/solicitudes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55819 - "GET /api/solicitudes HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61613 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61613 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61613 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60654 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60654 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60654 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62456 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62456 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62456 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "OPTIONS /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "OPTIONS /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "OPTIONS /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "OPTIONS /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /api/servicios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60838 - "GET /api/productos HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64783 - "GET /api/usuarios HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52014 - "GET /api/servicios HTTP/1.1" 200 OK

@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "Road Master API",
+    "description": "Pruebas del backend FastAPI + MySQL para la actividad (cuarto avance).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "token", "value": "" },
+    { "key": "producto_id", "value": "1" },
+    { "key": "usuario_id", "value": "1" },
+    { "key": "imagen_path", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "01 Health MySQL",
+      "request": { "method": "GET", "url": "{{base_url}}/health" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Servidor responde', function () { pm.response.to.have.status(200); });", "pm.test('MySQL conectado', function () { pm.expect(pm.response.json().status).to.eql('OK'); });"] } }]
+    },
+    {
+      "name": "02 Autenticación",
+      "item": [
+        {
+          "name": "Login Admin",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@roadmaster.com\",\n  \"password\": \"Admin123!\"\n}" }, "url": "{{base_url}}/auth/login" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Login correcto', function () { pm.response.to.have.status(200); });", "pm.collectionVariables.set('token', pm.response.json().token);", "pm.collectionVariables.set('usuario_id', pm.response.json().usuario.id);"] } }]
+        },
+        {
+          "name": "Registro Cliente",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Cliente Postman\",\n  \"apellido\": \"Prueba\",\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"{{random_doc}}\",\n  \"direccion\": \"Calle 1 # 1-1\",\n  \"telefono\": \"3000000001\",\n  \"email\": \"cliente{{$timestamp}}@correo.com\",\n  \"password\": \"Cliente123!\"\n}" }, "url": "{{base_url}}/auth/registro" },
+          "event": [{ "listen": "prerequest", "script": { "exec": ["pm.collectionVariables.set('random_doc', String(Date.now()).slice(-9));"] } }, { "listen": "test", "script": { "exec": ["pm.test('Registro correcto', function () { pm.response.to.have.status(201); });"] } }]
+        }
+      ]
+    },
+    {
+      "name": "03 Usuarios Admin",
+      "item": [
+        { "name": "Listar usuarios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/usuarios" } },
+        { "name": "Perfil autenticado", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/usuarios/perfil" } },
+        { "name": "Cambiar estado", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estado\": \"inactivo\"\n}" }, "url": "{{base_url}}/usuarios/{{usuario_id}}/estado" } }
+      ]
+    },
+    {
+      "name": "04 Productos",
+      "item": [
+        { "name": "Listar productos", "request": { "method": "GET", "url": "{{base_url}}/productos" } },
+        { "name": "Crear producto con imagen", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "body": { "mode": "formdata", "formdata": [{ "key": "nombre", "value": "Modelo Postman", "type": "text" }, { "key": "marca", "value": "Road Master", "type": "text" }, { "key": "precio", "value": "250000000", "type": "text" }, { "key": "categoria", "value": "Tractocamión", "type": "text" }, { "key": "descripcion", "value": "Producto creado desde Postman", "type": "text" }, { "key": "imagen", "type": "file", "src": "{{imagen_path}}" }] }, "url": "{{base_url}}/productos" } },
+        { "name": "Actualizar producto", "request": { "method": "PUT", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Modelo actualizado\",\n  \"marca\": \"Road Master\",\n  \"precio\": 260000000,\n  \"categoria\": \"Carga pesada\",\n  \"descripcion\": \"Actualizado desde Postman\"\n}" }, "url": "{{base_url}}/productos/{{producto_id}}" } },
+        { "name": "Eliminar producto", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/productos/{{producto_id}}" } }
+      ]
+    },
+    {
+      "name": "05 Servicios",
+      "item": [
+        { "name": "Listar servicios", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/servicios" } },
+        { "name": "Crear servicio", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Mantenimiento preventivo\",\n  \"descripcion\": \"Servicio de prueba\",\n  \"precio\": 150000\n}" }, "url": "{{base_url}}/servicios" } }
+      ]
+    },
+    {
+      "name": "06 Seguridad - sin token",
+      "request": { "method": "GET", "url": "{{base_url}}/usuarios" },
+      "event": [{ "listen": "test", "script": { "exec": ["pm.test('Ruta protegida', function () { pm.expect([401, 403]).to.include(pm.response.code); });"] } }]
+    }
+  ]
+}

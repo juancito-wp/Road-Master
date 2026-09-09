@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{base_url}}/servicios"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "nombre": "Mantenimiento preventivo",
+      "descripcion": "Servicio de prueba",
+      "precio": 150000
+    }
+order: 2000

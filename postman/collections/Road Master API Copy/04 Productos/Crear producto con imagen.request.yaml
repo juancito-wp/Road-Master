@@ -1,0 +1,28 @@
+$kind: http-request
+url: "{{base_url}}/productos"
+method: POST
+headers:
+  Authorization: Bearer {{token}}
+body:
+  type: formdata
+  content:
+    - type: text
+      key: nombre
+      value: Modelo Postman
+    - type: text
+      key: marca
+      value: Road Master
+    - type: text
+      key: precio
+      value: "250000000"
+    - type: text
+      key: categoria
+      value: Tractocamión
+    - type: text
+      key: descripcion
+      value: Producto creado desde Postman
+    - type: file
+      key: imagen
+      src:
+        - "{{imagen_path}}"
+order: 2000
