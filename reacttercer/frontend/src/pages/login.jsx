@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import RegisterModal from "../components/RegisterModal";
 import RecuperarPassword from "../components/RecuperarPassword";
 import API from "../api/axios";
@@ -8,6 +8,11 @@ import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Intención enviada desde el catálogo público ("Cotizar este modelo")
+  const intencionCotizacion =
+    location.state?.seccion === "cotizacion" ? location.state : null;
 
   const [formulario, setFormulario] = useState({
     email: "",
@@ -21,6 +26,13 @@ export default function Login() {
   const [mensajeExito, setMensajeExito] = useState("");
   const [cargando, setCargando] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
+
+  // Si se llega desde el código QR (login?registro=1), se abre el registro automáticamente
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("registro") === "1") {
+      setMostrarRegistro(true);
+    }
+  }, [location.search]);
 
   // ==============================
   // VALIDACIÓN LOCAL DE CAMPOS
@@ -134,7 +146,19 @@ export default function Login() {
         if (rolUsuario === "admin") {
           navigate("/admin");
         } else if (rolUsuario === "cliente") {
-          navigate("/mi-cuenta");
+          if (intencionCotizacion) {
+            // Regresa a la cotización con el vehículo que el cliente eligió en el catálogo
+            navigate(location.state.redirectTo || "/mi-cuenta", {
+              replace: true,
+              state: {
+                seccion: "cotizacion",
+                modeloId: intencionCotizacion.modeloId ?? null,
+                modeloNombre: intencionCotizacion.modeloNombre ?? null,
+              },
+            });
+          } else {
+            navigate("/mi-cuenta");
+          }
         } else {
           navigate("/panel-empleado");
         }

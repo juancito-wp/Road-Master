@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from .database import get_db
 from .models import Producto, Servicio, Solicitud, Usuario
+from .routers import chatbot, estadisticas, facturas, pqr, reportes, ventas
 from .schemas import (
     EstadoUpdate, LoginRequest, PerfilUpdate, RecuperarPasswordRequest, RegistroUsuario,
     RestablecerPasswordRequest, ServicioRequest, ServicioResponse, SolicitudEstadoUpdate,
@@ -29,18 +30,28 @@ from .security import (
     hash_password, require_roles, verify_password,
 )
 
-app = FastAPI(title='Road Master API', version='4.0.0')
-frontend_origin = os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173')
+app = FastAPI(title='Road Master API', version='5.0.0')
+origins = [origin.strip() for origin in os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173').split(',') if origin.strip()]
+for desarrollo in ('http://localhost:5173', 'http://127.0.0.1:5173'):
+    if desarrollo not in origins:
+        origins.append(desarrollo)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_origin, 'http://localhost:5173'],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
 
-UPLOADS = Path(__file__).resolve().parent.parent / 'backend' / 'uploads'
-UPLOADS.mkdir(exist_ok=True)
+app.include_router(ventas.router)
+app.include_router(facturas.router)
+app.include_router(reportes.router)
+app.include_router(pqr.router)
+app.include_router(chatbot.router)
+app.include_router(estadisticas.router)
+
+UPLOADS = Path(__file__).resolve().parent / 'uploads'
+UPLOADS.mkdir(parents=True, exist_ok=True)
 app.mount('/uploads', StaticFiles(directory=UPLOADS), name='uploads')
 codigos_recuperacion: dict[str, dict[str, object]] = {}
 

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/header";
 import Footer from "./components/footer";
 
@@ -18,13 +18,21 @@ import PanelAdmin from "./pages/panelAdmin";
 import PanelCliente from "./pages/panelCliente";
 import PanelUsuario from "./pages/panelUsuario";
 import WhatsAppButton from "./components/WhatsAppButton";
+import ChatbotWidget from "./components/chatbot/ChatbotWidget";
+import QrAccesoWidget from "./components/QrAccesoWidget";
+
+// Todas las rutas de panel usan sidebar propio (sin Header ni Footer público)
+const RUTAS_PANEL = ["/admin", "/mi-cuenta", "/panel-empleado", "/panel-usuario"];
 
 export default function App() {
+  const { pathname } = useLocation();
+  const esPanel = RUTAS_PANEL.some((ruta) => pathname.startsWith(ruta));
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
-      <Header />
-      
-      <main className="flex-1">
+      {!esPanel && <Header />}
+
+      <main className={esPanel ? "" : "flex-1"}>
         <Routes>
           {/* ================= RUTAS PÚBLICAS ================= */}
           <Route path="/" element={<Index1 />} />
@@ -58,8 +66,10 @@ export default function App() {
         </Routes>
       </main>
 
-      <Footer />
-      <WhatsAppButton />
+      {!esPanel && <Footer />}
+      {!esPanel && <WhatsAppButton />}
+      {!esPanel && <ChatbotWidget />}
+      {!esPanel && <QrAccesoWidget />}
     </div>
   );
 }

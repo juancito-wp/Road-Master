@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api/axios"; // 👈 Importamos la instancia de Axios
 
 import descarga from "../assets/descarga.jpg";
@@ -76,6 +77,7 @@ export default function Index3() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
   const [modeloSeleccionado, setModeloSeleccionado] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const obtenerModelos = async () => {
@@ -108,6 +110,29 @@ export default function Index3() {
 
   const abrirModelo = (modelo) => setModeloSeleccionado(modelo);
   const cerrarModelo = () => setModeloSeleccionado(null);
+
+  // Solo un usuario con sesión de cliente puede enviar una cotización
+  const haySesionCliente = () => {
+    const token = localStorage.getItem("token");
+    const rol = localStorage.getItem("rolUsuario");
+    return Boolean(token) && rol === "cliente";
+  };
+
+  // Lleva a la cotización del panel de cliente con el vehículo ya elegido.
+  // Sin sesión de cliente, primero pasa por el Login y luego regresa a la cotización.
+  const cotizarModelo = (modelo) => {
+    const intencion = {
+      seccion: "cotizacion",
+      modeloId: modelo?.id ?? null,
+      modeloNombre: modelo?.nombre ?? null,
+    };
+
+    if (haySesionCliente()) {
+      navigate("/mi-cuenta", { state: intencion });
+    } else {
+      navigate("/login", { state: { ...intencion, redirectTo: "/mi-cuenta" } });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -167,13 +192,29 @@ export default function Index3() {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={cerrarModelo}
-                  className="mt-6 inline-flex rounded-full bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-500"
-                >
-                  Cerrar
-                </button>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => cotizarModelo(modeloSeleccionado)}
+                    className="inline-flex rounded-full bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-500"
+                  >
+                    Cotizar este modelo
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={cerrarModelo}
+                    className="inline-flex rounded-full border border-white/15 px-5 py-3 text-sm font-bold text-slate-300 transition hover:border-white/40 hover:text-white"
+                  >
+                    Cerrar
+                  </button>
+                </div>
+
+                {!haySesionCliente() && (
+                  <p className="mt-3 text-xs text-slate-500">
+                    Para enviar la cotización necesitas iniciar sesión o crear una cuenta como cliente.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -350,6 +391,7 @@ export default function Index3() {
 
           <button
             type="button"
+            onClick={() => navigate("/contacto")}
             className="mt-8 rounded-md bg-red-600 px-8 py-4 font-bold text-white shadow-lg shadow-red-600/20 transition duration-300 hover:-translate-y-1 hover:bg-red-700"
           >
             Contactar

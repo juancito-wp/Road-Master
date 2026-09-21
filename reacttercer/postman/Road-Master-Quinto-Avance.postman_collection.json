@@ -1,0 +1,643 @@
+{
+  "info": {
+    "name": "Road Master API - Quinto Avance",
+    "description": "Pruebas de ventas, facturación, reportes PDF/Excel, PQR, chatbot con IA y estadísticas de los dashboards. Ejecuta primero las peticiones de la carpeta Autenticación para obtener los tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "token_admin", "value": "" },
+    { "key": "token_cliente", "value": "" },
+    { "key": "email_admin", "value": "admin@roadmaster.com" },
+    { "key": "password_admin", "value": "Admin1234" },
+    { "key": "email_cliente", "value": "cliente@roadmaster.com" },
+    { "key": "password_cliente", "value": "Cliente1234" },
+    { "key": "producto_id", "value": "1" },
+    { "key": "servicio_id", "value": "1" },
+    { "key": "cliente_id", "value": "2" },
+    { "key": "venta_id", "value": "" },
+    { "key": "factura_id", "value": "" },
+    { "key": "factura_numero", "value": "" },
+    { "key": "pqr_id", "value": "" },
+    { "key": "sesion_chat", "value": "" },
+    { "key": "fecha", "value": "2026-09-21" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": { "method": "GET", "header": [], "url": "{{base_url}}/health" }
+    },
+    {
+      "name": "Autenticacion",
+      "item": [
+        {
+          "name": "Login administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login correcto (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('token_admin', json.token);",
+                  "const usuarios = pm.expect(json.usuario.rol).to.eql('admin');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_admin}}\",\n  \"password\": \"{{password_admin}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        },
+        {
+          "name": "Login cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login correcto (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('token_cliente', json.token);",
+                  "pm.collectionVariables.set('cliente_id', json.usuario.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_cliente}}\",\n  \"password\": \"{{password_cliente}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Registrar venta (cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Venta creada (201)', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('venta_id', json.venta.id);",
+                  "pm.test('Incluye detalle de producto y servicio', () => pm.expect(json.venta.detalles.length).to.be.at.least(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_cliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productoId\": {{producto_id}}, \"cantidad\": 1, \"descuento\": 0 },\n    { \"servicioId\": {{servicio_id}}, \"cantidad\": 2 }\n  ],\n  \"descuento\": 0,\n  \"impuestoPorcentaje\": 19,\n  \"observaciones\": \"Venta registrada desde Postman\"\n}"
+            },
+            "url": "{{base_url}}/ventas"
+          }
+        },
+        {
+          "name": "Registrar venta (empleado a nombre de un cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Venta creada (201)', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('venta_id', json.venta.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clienteId\": {{cliente_id}},\n  \"items\": [\n    { \"productoId\": {{producto_id}}, \"cantidad\": 1, \"descuento\": 200000 }\n  ],\n  \"descuento\": 50000,\n  \"impuestoPorcentaje\": 19\n}"
+            },
+            "url": "{{base_url}}/ventas"
+          }
+        },
+        {
+          "name": "Historial de ventas con filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consulta correcta (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve el arreglo de ventas', () => pm.expect(pm.response.json().ventas).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/ventas?fechaInicio=2026-01-01&fechaFin=2026-12-31&estado=pagada&productoId={{producto_id}}&totalMin=0",
+              "host": ["{{base_url}}"],
+              "path": ["ventas"],
+              "query": [
+                { "key": "fechaInicio", "value": "2026-01-01" },
+                { "key": "fechaFin", "value": "2026-12-31" },
+                { "key": "estado", "value": "pagada" },
+                { "key": "productoId", "value": "{{producto_id}}" },
+                { "key": "totalMin", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener venta por id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consulta correcta (200)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": "{{base_url}}/ventas/{{venta_id}}"
+          }
+        },
+        {
+          "name": "Cambiar estado de la venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Estado actualizado (200)', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"estado\": \"pagada\" }" },
+            "url": "{{base_url}}/ventas/{{venta_id}}/estado"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes",
+      "item": [
+        {
+          "name": "Reporte diario de ventas (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Reporte generado (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye resumen y ventas', () => {",
+                  "  const json = pm.response.json();",
+                  "  pm.expect(json.resumen).to.have.property('totalVendido');",
+                  "  pm.expect(json.ventas).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/reportes/ventas-diario?fecha={{fecha}}",
+              "host": ["{{base_url}}"],
+              "path": ["reportes", "ventas-diario"],
+              "query": [{ "key": "fecha", "value": "{{fecha}}" }]
+            }
+          }
+        },
+        {
+          "name": "Reporte diario en PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PDF generado (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('El cuerpo es un PDF', () => pm.expect(pm.response.text().slice(0, 5)).to.eql('%PDF-'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/reportes/ventas-diario/pdf?fecha={{fecha}}",
+              "host": ["{{base_url}}"],
+              "path": ["reportes", "ventas-diario", "pdf"],
+              "query": [{ "key": "fecha", "value": "{{fecha}}" }]
+            }
+          }
+        },
+        {
+          "name": "Reporte diario en Excel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Excel generado (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('El archivo es un .xlsx', () => pm.expect(pm.response.text().slice(0, 2)).to.eql('PK'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/reportes/ventas-diario/excel?fecha={{fecha}}",
+              "host": ["{{base_url}}"],
+              "path": ["reportes", "ventas-diario", "excel"],
+              "query": [{ "key": "fecha", "value": "{{fecha}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        {
+          "name": "Generar factura desde una venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Factura generada (201)', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('factura_id', json.factura.id);",
+                  "pm.collectionVariables.set('factura_numero', json.factura.numero);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"ventaId\": {{venta_id}}\n}" },
+            "url": "{{base_url}}/facturas"
+          }
+        },
+        {
+          "name": "Consultar factura por numero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consulta correcta (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Devuelve el arreglo de facturas', () => pm.expect(pm.response.json().facturas).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/facturas?numero={{factura_numero}}",
+              "host": ["{{base_url}}"],
+              "path": ["facturas"],
+              "query": [{ "key": "numero", "value": "{{factura_numero}}" }]
+            }
+          }
+        },
+        {
+          "name": "Consultar facturas por fecha",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/facturas?fechaInicio={{fecha}}&fechaFin={{fecha}}",
+              "host": ["{{base_url}}"],
+              "path": ["facturas"],
+              "query": [
+                { "key": "fechaInicio", "value": "{{fecha}}" },
+                { "key": "fechaFin", "value": "{{fecha}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Descargar factura en PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PDF de la factura (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('El cuerpo es un PDF', () => pm.expect(pm.response.text().slice(0, 5)).to.eql('%PDF-'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": "{{base_url}}/facturas/{{factura_id}}/pdf"
+          }
+        },
+        {
+          "name": "Cambiar estado de la factura",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"estado\": \"pagada\" }" },
+            "url": "{{base_url}}/facturas/{{factura_id}}/estado"
+          }
+        }
+      ]
+    },
+    {
+      "name": "PQR",
+      "item": [
+        {
+          "name": "Registrar PQR (cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('PQR creada (201)', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('pqr_id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_cliente}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"queja\",\n  \"asunto\": \"Demora en la entrega del vehículo\",\n  \"descripcion\": \"Registro la queja para validar el módulo PQR desde Postman con el quinto avance.\"\n}"
+            },
+            "url": "{{base_url}}/pqr"
+          }
+        },
+        {
+          "name": "Consultar mis PQR (cliente)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Consulta correcta (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye el resumen por estado', () => pm.expect(pm.response.json().resumen).to.have.property('pendiente'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_cliente}}" }],
+            "url": "{{base_url}}/pqr"
+          }
+        },
+        {
+          "name": "Listar y filtrar PQR (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/pqr?estado=pendiente&tipo=queja",
+              "host": ["{{base_url}}"],
+              "path": ["pqr"],
+              "query": [
+                { "key": "estado", "value": "pendiente" },
+                { "key": "tipo", "value": "queja" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Gestionar estado de la PQR",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{ \"estado\": \"en proceso\" }" },
+            "url": "{{base_url}}/pqr/{{pqr_id}}/estado"
+          }
+        },
+        {
+          "name": "Responder la PQR",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Respuesta registrada (200)', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado respondida', () => pm.expect(pm.response.json().pqr.estado).to.eql('respondida'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token_admin}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"respuesta\": \"Se programó la entrega del vehículo para el próximo viernes.\",\n  \"estado\": \"respondida\"\n}"
+            },
+            "url": "{{base_url}}/pqr/{{pqr_id}}/respuesta"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chatbot IA",
+      "item": [
+        {
+          "name": "Enviar mensaje al chatbot",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Respuesta del chatbot (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('sesion_chat', json.sesion);",
+                  "pm.test('Responde con texto', () => pm.expect(json.respuesta.length).to.be.above(10));",
+                  "console.log('Fuente de la respuesta:', json.fuente);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": \"Hola, ¿qué modelos tienen disponibles y cómo puedo comprar?\"\n}"
+            },
+            "url": "{{base_url}}/chatbot/mensaje"
+          }
+        },
+        {
+          "name": "Continuar la conversación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Respuesta del chatbot (200)', () => pm.response.to.have.status(200));",
+                  "pm.expect(pm.response.json().respuesta).to.be.a('string');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mensaje\": \"¿Cómo registro una PQR?\",\n  \"sesion\": \"{{sesion_chat}}\"\n}"
+            },
+            "url": "{{base_url}}/chatbot/mensaje"
+          }
+        },
+        {
+          "name": "Historial de la conversación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/chatbot/mensajes/{{sesion_chat}}"
+          }
+        },
+        {
+          "name": "Listar conversaciones (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": "{{base_url}}/chatbot/conversaciones"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estadisticas y Dashboards",
+      "item": [
+        {
+          "name": "Dashboard administrativo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Indicadores recibidos (200)', () => pm.response.to.have.status(200));",
+                  "const claves = pm.response.json().cards.map((card) => card.clave);",
+                  "pm.test('Incluye ventas, facturacion y PQR', () => {",
+                  "  pm.expect(claves).to.include('ventasTotales');",
+                  "  pm.expect(claves).to.include('facturacion');",
+                  "  pm.expect(claves).to.include('pqrPendientes');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": "{{base_url}}/estadisticas/dashboard"
+          }
+        },
+        {
+          "name": "Dashboard del cliente",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_cliente}}" }],
+            "url": "{{base_url}}/estadisticas/dashboard"
+          }
+        },
+        {
+          "name": "Estadisticas de ventas con filtros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Series para graficos (200)', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Devuelve cards, serie temporal y ranking', () => {",
+                  "  pm.expect(json.cards).to.be.an('array');",
+                  "  pm.expect(json.temporal).to.be.an('array');",
+                  "  pm.expect(json.productos).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token_admin}}" }],
+            "url": {
+              "raw": "{{base_url}}/estadisticas/ventas?fechaInicio=2026-01-01&fechaFin=2026-12-31&agrupacion=mes&productoId={{producto_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["estadisticas", "ventas"],
+              "query": [
+                { "key": "fechaInicio", "value": "2026-01-01" },
+                { "key": "fechaFin", "value": "2026-12-31" },
+                { "key": "agrupacion", "value": "mes" },
+                { "key": "productoId", "value": "{{producto_id}}" }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

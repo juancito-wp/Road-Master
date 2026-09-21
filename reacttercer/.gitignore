@@ -1,0 +1,17 @@
+# Entornos virtuales Python
+.venv/
+venv/
+__pycache__/
+
+# Dependencias
+node_modules/
+
+# Secretos y configuración local
+.env
+.env.local
+
+# Logs
+*.log
+
+# Builds
+frontend/dist/
