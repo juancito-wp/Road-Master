@@ -1,10 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import RegisterModal from "../components/RegisterModal";
 import RecuperarPassword from "../components/RecuperarPassword";
 import API from "../api/axios";
 import logoRoadMaster from "../assets/Logo road master.png";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+
+// Estilo de la insignia según el rol del usuario
+const ROLES_UI = {
+  admin: { texto: "Administrador", clases: "border-red-500/30 bg-red-500/15 text-red-300" },
+  empleado: { texto: "Empleado", clases: "border-amber-500/30 bg-amber-500/15 text-amber-300" },
+  cliente: { texto: "Cliente", clases: "border-green-500/30 bg-green-500/15 text-green-300" },
+};
+
+// Saludo dinámico según la hora en que se inicia sesión
+const saludoSegunHora = () => {
+  const hora = new Date().getHours();
+  if (hora < 12) return "¡Buenos días,";
+  if (hora < 19) return "¡Buenas tardes,";
+  return "¡Buenas noches,";
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,9 +38,10 @@ export default function Login() {
   const [errores, setErrores] = useState({});
   const [mostrarRegistro, setMostrarRegistro] = useState(false);
   const [mostrarRecuperar, setMostrarRecuperar] = useState(false);
-  const [mensajeExito, setMensajeExito] = useState("");
+  const [bienvenida, setBienvenida] = useState(null); // { nombre, rol }
   const [cargando, setCargando] = useState(false);
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  const timeoutRef = useRef(null);
 
   // Si se llega desde el código QR (login?registro=1), se abre el registro automáticamente
   useEffect(() => {
@@ -33,6 +49,11 @@ export default function Login() {
       setMostrarRegistro(true);
     }
   }, [location.search]);
+
+  // Limpia el temporizador de redirección si el componente se desmonta
+  useEffect(() => () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
 
   // ==============================
   // VALIDACIÓN LOCAL DE CAMPOS
@@ -61,8 +82,6 @@ export default function Login() {
       ...prev,
       [nombre]: error,
     }));
-
-    setMensajeExito("");
   };
 
   // ==============================
@@ -83,13 +102,40 @@ export default function Login() {
     }
   };
 
+  // Redirección según el rol (la usan el temporizador y el botón de la tarjeta de bienvenida)
+  const redirigirSegunRol = (rol) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    if (rol === "admin") {
+      navigate("/admin");
+    } else if (rol === "cliente") {
+      if (intencionCotizacion) {
+        // Regresa a la cotización con el vehículo que el cliente eligió en el catálogo
+        navigate(location.state.redirectTo || "/mi-cuenta", {
+          replace: true,
+          state: {
+            seccion: "cotizacion",
+            modeloId: intencionCotizacion.modeloId ?? null,
+            modeloNombre: intencionCotizacion.modeloNombre ?? null,
+          },
+        });
+      } else {
+        navigate("/mi-cuenta");
+      }
+    } else {
+      navigate("/panel-empleado");
+    }
+  };
+
   // ==============================
   // INICIAR SESIÓN (PETICIÓN A LA API)
   // ==============================
 
   const manejarLogin = async (e) => {
     e.preventDefault();
-    setMensajeExito("");
 
     const erroresActuales = {};
 
@@ -139,30 +185,9 @@ export default function Login() {
         localStorage.removeItem("recordarSesion");
       }
 
-      setMensajeExito(`¡Bienvenido, ${nombreUsuario}! Redirigiendo...`);
-
-      // Redirección condicional según el Rol tras 1.2 segundos
-      setTimeout(() => {
-        if (rolUsuario === "admin") {
-          navigate("/admin");
-        } else if (rolUsuario === "cliente") {
-          if (intencionCotizacion) {
-            // Regresa a la cotización con el vehículo que el cliente eligió en el catálogo
-            navigate(location.state.redirectTo || "/mi-cuenta", {
-              replace: true,
-              state: {
-                seccion: "cotizacion",
-                modeloId: intencionCotizacion.modeloId ?? null,
-                modeloNombre: intencionCotizacion.modeloNombre ?? null,
-              },
-            });
-          } else {
-            navigate("/mi-cuenta");
-          }
-        } else {
-          navigate("/panel-empleado");
-        }
-      }, 1200);
+      // Tarjeta de bienvenida dinámica y redirección cuando su barra termina
+      setBienvenida({ nombre: nombreUsuario, rol: rolUsuario });
+      timeoutRef.current = setTimeout(() => redirigirSegunRol(rolUsuario), 2200);
 
     } catch (error) {
       const mensajeError =
@@ -242,13 +267,6 @@ export default function Login() {
               {errores.password && <p className="mt-2 text-sm text-red-400">{errores.password}</p>}
             </div>
 
-            {/* ================= MENSAJE DE ÉXITO ================= */}
-            {mensajeExito && (
-              <div className="mb-5 rounded-lg border border-green-500/20 bg-green-500/10 p-3 text-sm text-green-400">
-                {mensajeExito}
-              </div>
-            )}
-
             {/* ================= OPCIONES ================= */}
             <div className="mb-6 flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-slate-400">
@@ -298,6 +316,58 @@ export default function Login() {
       {/* ================= MODALES ================= */}
       {mostrarRegistro && <RegisterModal cerrarModal={() => setMostrarRegistro(false)} />}
       {mostrarRecuperar && <RecuperarPassword cerrar={() => setMostrarRecuperar(false)} />}
+
+      {/* ================= TARJETA DE BIENVENIDA DINÁMICA ================= */}
+      {bienvenida && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl">
+            {/* Brillo superior animado */}
+            <div className="absolute inset-x-0 top-0 h-1 overflow-hidden">
+              <div className="h-full w-1/2 animate-[welcome-slide_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+            </div>
+
+            <img
+              src={logoRoadMaster}
+              alt="Logo Road Master"
+              className="mx-auto h-20 w-20 animate-[welcome-pop_0.45s_ease-out] object-contain"
+            />
+
+            <p className="mt-4 text-sm font-semibold uppercase tracking-[0.25em] text-red-500">
+              {saludoSegunHora()}
+            </p>
+
+            <h2 className="mt-2 text-3xl font-black text-white">
+              {bienvenida.nombre}
+            </h2>
+
+            <span
+              className={`mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider ${
+                (ROLES_UI[bienvenida.rol] || ROLES_UI.cliente).clases
+              }`}
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {(ROLES_UI[bienvenida.rol] || ROLES_UI.cliente).texto}
+            </span>
+
+            <p className="mt-4 text-sm text-slate-400">
+              Inicio de sesión exitoso. Estamos preparando tu panel...
+            </p>
+
+            {/* Barra de progreso hacia la redirección */}
+            <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div className="h-full animate-[welcome-fill_2.2s_linear_forwards] rounded-full bg-gradient-to-r from-red-600 to-red-400" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => redirigirSegunRol(bienvenida.rol)}
+              className="mt-6 w-full rounded-lg bg-red-600 px-6 py-3 font-bold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700"
+            >
+              Entrar ahora
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
