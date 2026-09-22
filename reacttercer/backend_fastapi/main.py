@@ -1,3 +1,4 @@
+import logging
 import os
 import secrets
 import smtplib
@@ -29,6 +30,8 @@ from .security import (
     create_reset_token, create_token, decode_reset_token, get_current_user,
     hash_password, require_roles, verify_password,
 )
+
+logger = logging.getLogger('road_master')
 
 app = FastAPI(title='Road Master API', version='5.0.0')
 origins = [origin.strip() for origin in os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173').split(',') if origin.strip()]
@@ -134,8 +137,9 @@ def health(db: Session = Depends(get_db)):
     try:
         db.execute(text('SELECT 1'))
         return {'status': 'OK', 'mensaje': 'Conexión exitosa'}
-    except SQLAlchemyError:
-        raise HTTPException(status_code=503, detail='Error al conectar con la base de datos SQL')
+    except SQLAlchemyError as error:
+        logger.exception('No fue posible conectar con la base de datos')
+        raise HTTPException(status_code=503, detail='Error al conectar con la base de datos SQL') from error
 
 
 @app.post('/api/auth/registro', status_code=201)
