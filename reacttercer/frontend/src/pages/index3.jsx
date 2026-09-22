@@ -138,7 +138,7 @@ export default function Index3() {
     <main className="min-h-screen bg-slate-950 text-white">
       {modeloSeleccionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-red-950/30">
+          <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-red-950/30">
             <button
               type="button"
               onClick={cerrarModelo}
@@ -226,12 +226,12 @@ export default function Index3() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-red-950/30" />
         <div className="absolute -right-32 top-10 h-96 w-96 rounded-full bg-red-600/10 blur-3xl" />
 
-        <div className="relative mx-auto max-w-7xl px-6 py-24 text-center lg:px-8">
+        <div className="relative mx-auto max-w-7xl px-6 py-16 text-center sm:py-24 lg:px-8">
           <span className="text-sm font-bold uppercase tracking-[0.3em] text-red-500">
             Nuestra flota
           </span>
 
-          <h1 className="mt-4 text-5xl font-black tracking-tight sm:text-6xl lg:text-7xl">
+          <h1 className="mt-4 text-4xl font-black tracking-tight sm:text-6xl lg:text-7xl">
             MODELOS
           </h1>
 

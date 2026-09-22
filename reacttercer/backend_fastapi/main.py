@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import secrets
 import smtplib
 import shutil
@@ -82,10 +83,30 @@ def usuario_dict(user: Usuario) -> dict:
     }
 
 
-def producto_dict(product: Producto) -> dict:
+def base_publica(request: Request | None = None) -> str:
+    '''URL publica con la que se sirven los archivos subidos.
+
+    Usa PUBLIC_BASE_URL y, si no esta definida, la deduce del propio request (Railway
+    reenvia el dominio publico en los encabezados Host y X-Forwarded-Proto).
+    '''
+    configurada = os.getenv('PUBLIC_BASE_URL')
+    if configurada:
+        return configurada.rstrip('/')
+    if request is not None:
+        esquema = request.headers.get('x-forwarded-proto', request.url.scheme)
+        host = request.headers.get('host', request.url.netloc)
+        return f'{esquema}://{host}'.rstrip('/')
+    return 'http://localhost:8000'
+
+
+def producto_dict(product: Producto, request: Request | None = None) -> dict:
     data = {column.name: getattr(product, column.name) for column in Producto.__table__.columns}
     if data['imagen']:
-        data['imagen'] = data['imagen'].replace('http://localhost:5000', 'http://localhost:8000')
+        # Los registros creados antes de configurar PUBLIC_BASE_URL guardan la base de
+        # desarrollo (http://localhost:8000/uploads/...), que en produccion apunta a la
+        # maquina del visitante y deja todas las tarjetas sin imagen. Se reescribe por la
+        # base publica real.
+        data['imagen'] = re.sub(r'^https?://(localhost|127\.0\.0\.1)(:\d+)?', base_publica(request), data['imagen'])
     return data
 
 
@@ -295,16 +316,16 @@ def eliminar_usuario(user_id: int, db: Session = Depends(get_db), _: Usuario = D
 
 @app.get('/api/productos')
 @app.get('/api/modelos')
-def listar_productos(db: Session = Depends(get_db)):
-    return [producto_dict(product) for product in db.scalars(select(Producto).order_by(Producto.id.desc())).all()]
+def listar_productos(request: Request, db: Session = Depends(get_db)):
+    return [producto_dict(product, request) for product in db.scalars(select(Producto).order_by(Producto.id.desc())).all()]
 
 
 @app.get('/api/productos/{product_id}')
-def obtener_producto(product_id: int, db: Session = Depends(get_db)):
+def obtener_producto(product_id: int, request: Request, db: Session = Depends(get_db)):
     product = db.get(Producto, product_id)
     if not product:
         raise HTTPException(status_code=404, detail='Producto no encontrado')
-    return producto_dict(product)
+    return producto_dict(product, request)
 
 
 def product_form(nombre: str, precio: str):
@@ -316,6 +337,7 @@ def product_form(nombre: str, precio: str):
 @app.post('/api/productos', status_code=201)
 @app.post('/api/modelos', status_code=201)
 def crear_producto(
+    request: Request,
     nombre: str = Form(...), precio: str = Form(...), marca: str | None = Form(None),
     categoria: str | None = Form(None), descripcion: str | None = Form(None), potencia: str | None = Form(None),
     motor: str | None = Form(None), transmision: str | None = Form(None), aplicacion: str | None = Form(None),
@@ -331,7 +353,7 @@ def crear_producto(
         shutil.copyfileobj(imagen.file, output)
     product = Producto(nombre=nombre, precio=precio, marca=marca, categoria=categoria, descripcion=descripcion,
                        potencia=potencia, motor=motor, transmision=transmision, aplicacion=aplicacion,
-                       imagen=f'{os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")}/uploads/{filename}')
+                       imagen=f'{base_publica(request)}/uploads/{filename}')
     db.add(product)
     db.commit()
     db.refresh(product)
@@ -340,6 +362,7 @@ def crear_producto(
 
 @app.put('/api/productos/{product_id}')
 def actualizar_producto(
+    request: Request,
     product_id: int, nombre: str = Form(...), precio: str = Form(...), marca: str | None = Form(None),
     categoria: str | None = Form(None), descripcion: str | None = Form(None), potencia: str | None = Form(None),
     motor: str | None = Form(None), transmision: str | None = Form(None), aplicacion: str | None = Form(None),
@@ -358,7 +381,7 @@ def actualizar_producto(
         filename = f'{uuid.uuid4().hex}{Path(imagen.filename or "imagen").suffix.lower()}'
         with (UPLOADS / filename).open('wb') as output:
             shutil.copyfileobj(imagen.file, output)
-        product.imagen = f'{os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")}/uploads/{filename}'
+        product.imagen = f'{base_publica(request)}/uploads/{filename}'
     db.commit()
     return {'mensaje': 'Producto actualizado correctamente'}
 
