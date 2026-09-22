@@ -1,0 +1,13 @@
+# Contexto de construcción: reacttercer/frontend (Root Directory del servicio en Railway).
+# El .dockerignore de la raíz del repositorio NO aplica a este contexto, por eso se define aquí.
+node_modules
+dist
+dist-ssr
+*.local
+.vite
+
+# Variables de entorno y logs (nunca dentro de la imagen)
+.env
+.env.local
+.env.*.local
+*.log

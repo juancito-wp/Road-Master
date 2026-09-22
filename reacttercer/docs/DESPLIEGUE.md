@@ -4,6 +4,12 @@ Guía para publicar la aplicación **React + Vite → FastAPI → MySQL** y demo
 La plataforma recomendada por la guía del avance es **Railway**, y la misma configuración sirve para cualquier
 proveedor que acepte contenedores Docker (Render, Fly.io, Azure Container Apps, etc.).
 
+> **Importante — estructura del repositorio en GitHub.** El repositorio es `Road_Master` y el código del proyecto
+> vive dentro de la carpeta `reacttercer/`. Por eso, en Railway **todas las rutas van con ese prefijo**: el frontend
+> no está en `frontend/`, está en `reacttercer/frontend/`. Si configuras `Root Directory = frontend`, Railway no
+> encuentra nada ahí y termina construyendo lo que sí está en la raíz del repositorio: el **backend**
+> (ver [sección 8](#8-solución-de-problemas)).
+
 ---
 
 ## 1. Arquitectura de despliegue
@@ -12,10 +18,10 @@ proveedor que acepte contenedores Docker (Render, Fly.io, Azure Container Apps, 
 Navegador
    │  (HTTPS)
    ▼
-[ Servicio frontend: React + Vite servido por Nginx ]   ←  Dockerfile (frontend/)
+[ Servicio frontend: React + Vite servido por Nginx ]   ←  reacttercer/frontend/Dockerfile
    │  VITE_API_URL = https://<backend>.up.railway.app/api
    ▼
-[ Servicio backend: FastAPI + Uvicorn ]                  ←  Dockerfile (backend_fastapi/)
+[ Servicio backend: FastAPI + Uvicorn ]                  ←  Dockerfile (raíz del repo)
    │  DATABASE_URL, JWT_SECRET, OPENAI_API_KEY, FRONTEND_ORIGIN
    ▼
 [ Base de datos MySQL ]                                  ←  Plugin MySQL de Railway
@@ -25,13 +31,15 @@ Archivos de despliegue incluidos en el repositorio:
 
 | Archivo | Función |
 | --- | --- |
-| `backend_fastapi/Dockerfile` | Imagen del backend FastAPI (puerto dinámico `$PORT`). |
-| `backend_fastapi/Procfile` | Alternativa a Docker usando Nixpacks. |
-| `backend_fastapi/.env.example` | Variables de entorno del backend (sin credenciales reales). |
-| `frontend/Dockerfile` | Compila el SPA y lo publica con Nginx. |
-| `frontend/nginx.conf` + `frontend/docker-entrypoint.sh` | Puerto dinámico, respaldo de rutas SPA y gzip. |
-| `frontend/.env.example` | Variable `VITE_API_URL` del frontend. |
-| `railway.json`, `frontend/railway.json` | Build por Dockerfile y healthcheck `/api/health`. |
+| `Dockerfile` *(raíz del repo)* | Imagen del **backend**; es el que Railway detecta cuando el *Root Directory* del servicio es `/`. |
+| `railway.json` *(raíz del repo)* | Config **común a los dos servicios**: builder Dockerfile, healthcheck `/api/health` y reintentos. **No** fija `dockerfilePath` ni `startCommand`, para que cada servicio use el `Dockerfile` de su propio *Root Directory*. |
+| `reacttercer/backend_fastapi/Dockerfile` | Imagen del backend FastAPI (puerto dinámico `$PORT`) si el *Root Directory* es `reacttercer`. |
+| `reacttercer/backend_fastapi/Procfile` | Alternativa a Docker usando Nixpacks. |
+| `reacttercer/backend_fastapi/.env.example` | Variables de entorno del backend (sin credenciales reales). |
+| `reacttercer/frontend/Dockerfile` | Compila el SPA y lo publica con Nginx. |
+| `reacttercer/frontend/nginx.conf` + `reacttercer/frontend/docker-entrypoint.sh` | Puerto dinámico, respaldo de rutas SPA y gzip. |
+| `reacttercer/frontend/railway.json` | Build por Dockerfile del frontend; lo usa Railway con *Root Directory* = `reacttercer/frontend`. |
+| `reacttercer/frontend/.env.example` | Variable `VITE_API_URL` del frontend. |
 | `.dockerignore` | Evita copiar `node_modules`, `venv`, `.env` ni logs a las imágenes. |
 
 ---
@@ -62,8 +70,10 @@ Archivos de despliegue incluidos en el repositorio:
 ## 3. Backend (FastAPI)
 
 1. `+ New → GitHub Repo` y selecciona el repositorio.
-2. En **Settings → Build** elige *Dockerfile* con la ruta `backend_fastapi/Dockerfile`
-   (o deja que tome `railway.json` de la raíz).
+2. Deja el *Root Directory* del backend en `/` (raíz del repo): así Railway usa el `Dockerfile` de la raíz, que
+   copia el código desde `reacttercer/backend_fastapi/`. El `railway.json` de la raíz ya no fija el `Dockerfile`
+   ni el comando de arranque: el `Dockerfile` lo resuelve cada servicio desde su *Root Directory* y el arranque
+   lo aporta el `CMD` del propio `Dockerfile`.
 3. Configura las variables de entorno en **Variables**:
 
    | Variable | Valor |
@@ -89,7 +99,14 @@ Archivos de despliegue incluidos en el repositorio:
 
 ## 4. Frontend (React + Vite)
 
-1. Crea un segundo servicio desde el mismo repositorio y define **Root Directory = `frontend`**.
+1. Crea un segundo servicio desde el mismo repositorio y configura en `Settings → Source` este campo:
+   - **Root Directory**: `reacttercer/frontend` (⚠️ **no** `frontend`: en la raíz del repo esa carpeta no existe).
+
+   Con eso Railway baja únicamente esa carpeta como contexto de build y usa su `Dockerfile`.
+   El campo *Railway Config File* puede quedarse en su valor por defecto (`/railway.json`), porque el `railway.json`
+   de la raíz ya es común a los dos servicios. Si prefieres apuntarlo explícitamente, recuerda que **no sigue al
+   *Root Directory*** y se escribe con la ruta absoluta desde la raíz del repo:
+   `/reacttercer/frontend/railway.json`.
 2. Variables de entorno del servicio:
 
    | Variable | Valor |
@@ -100,6 +117,8 @@ Archivos de despliegue incluidos en el repositorio:
    `VITE_API_URL` se inyecta **en tiempo de build**, por eso el `Dockerfile` la recibe como `ARG`.
 3. Genera el dominio público y abre la URL. El SPA carga el catálogo, el login y los paneles.
 4. Si cambias la URL del backend, vuelve a desplegar el frontend para recompilar con el nuevo valor.
+5. El contexto de construcción es `reacttercer/frontend`, por eso su `.dockerignore` es el que se aplica
+   (no el de la raíz del repo).
 
 ---
 
@@ -141,3 +160,60 @@ Archivos de despliegue incluidos en el repositorio:
 7. PQR registrada por un cliente y respondida por el administrador.
 8. Conversación con el chatbot mostrando `"fuente": "openai"`.
 9. Captura de las variables de entorno **con los valores ocultos** (nunca muestres la API Key).
+
+---
+
+## 8. Solución de problemas
+
+### La URL del frontend muestra el backend
+
+**Síntoma:** abres el dominio del servicio de frontend y en lugar del SPA aparece la respuesta de FastAPI
+(un JSON como `{"detail":"Not Found"}` o la página de `/docs`).
+
+**Causa:** Railway decide qué construir con el `Dockerfile` del *Root Directory* del servicio, pero el
+`railway.json` de la raíz fijaba `dockerfilePath: Dockerfile` y `startCommand: uvicorn backend_fastapi.main:app`
+(el backend). Y como el *Railway Config File* **no sigue al *Root Directory***, ese archivo se leía igual aunque el
+*Root Directory* fuese `reacttercer/frontend`. Agravante: si un deploy falla, Railway **sigue sirviendo el último
+deploy exitoso**, que en ese servicio era el backend: por eso el dominio “no cambia nunca”.
+
+**Solución:** el `railway.json` de la raíz ya no fija `dockerfilePath` ni `startCommand`, así que basta con
+`Settings → Source` en el servicio del frontend:
+
+| Campo | Valor |
+| --- | --- |
+| *Root Directory* | `reacttercer/frontend` |
+
+Luego `Deployments → Redeploy`. Equivalente por CLI:
+
+```bash
+railway link
+railway environment edit --service-config <servicio-frontend> source.rootDirectory /reacttercer/frontend
+```
+
+**Cómo comprobarlo:**
+
+- En `Deployments`, mira si el último deploy está en **verde**. Si está en rojo, Railway sigue sirviendo el deploy
+  anterior (el backend) y el dominio parece “congelado”; revisa `Build Logs` y `Deploy Logs` para ver el error.
+- En `Deployments → Build Logs`, Railway indica con qué archivo construyó (`Using detected Dockerfile!`). Para el
+  frontend deben aparecer rutas `reacttercer/frontend/...`; si aparece el `Dockerfile` de la raíz, el *Root
+  Directory* del servicio no está puesto en `reacttercer/frontend`.
+- Abre `https://<frontend>.up.railway.app/api/health`: si responde un **JSON** (`{"status":"OK", ...}`) ese
+  contenedor es el **backend**; si responde el **HTML del SPA** (o la página con título *Road Master*), es el
+  **frontend**. Esta prueba distingue en 5 segundos qué servicio estás viendo.
+
+### La página carga pero el API falla (CORS o peticiones a `localhost:8000`)
+
+`VITE_API_URL` se inyecta **en tiempo de compilación**, no en tiempo de ejecución:
+
+- Debe existir como variable del servicio **frontend** con el valor `https://<backend>.up.railway.app/api`
+  (con el sufijo `/api` incluido). Railway entrega las variables del servicio como *build args*, y el `Dockerfile`
+  ya las declara con `ARG VITE_API_URL`.
+- Si cambias su valor, hay que **volver a desplegar** el frontend (no basta reiniciar) para recompilar el SPA.
+- En el servicio del **backend**, `FRONTEND_ORIGIN` debe incluir el dominio público del frontend, si no el navegador
+  bloqueará las peticiones por CORS.
+
+### `Application failed to respond` o error 502
+
+El contenedor de Nginx escucha en `$PORT`, que Railway inyecta automáticamente (`docker-entrypoint.sh` sustituye
+`__PORT__` en `nginx.conf`). No definas `PORT` a mano en las variables del servicio ni cambies el puerto de destino
+en `Networking`; deja que Railway lo asigne y genera el dominio público.
