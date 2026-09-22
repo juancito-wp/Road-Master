@@ -212,6 +212,29 @@ railway environment edit --service-config <servicio-frontend> source.rootDirecto
 - En el servicio del **backend**, `FRONTEND_ORIGIN` debe incluir el dominio público del frontend, si no el navegador
   bloqueará las peticiones por CORS.
 
+### El build falla: `couldn't locate the dockerfile at path ...`
+
+Mensaje típico en `Build Logs`:
+
+```
+couldn't locate the dockerfile at path reacttercer/frontend in code archive
+ - not found at reacttercer/frontend
+```
+
+El valor de ese campo es una **carpeta**, no un archivo: falta el nombre del `Dockerfile`. Revisa los campos de
+rutas del servicio (y borra la variable `RAILWAY_DOCKERFILE_PATH` si existe):
+
+| Campo | Valor correcto |
+| --- | --- |
+| `Settings → Source` → *Root Directory* | `reacttercer/frontend` |
+| `Settings → Build` → *Dockerfile Path* | vacío (si no se puede vaciar: `/reacttercer/frontend/Dockerfile`) |
+| `Settings → Source` → *Railway Config File* | vacío (o `/reacttercer/frontend/railway.json`) |
+| Variable `RAILWAY_DOCKERFILE_PATH` | no debe existir (o `/reacttercer/frontend/Dockerfile`) |
+
+Mientras el deploy nuevo esté en rojo, el servicio sigue marcado **Online** sirviendo el deploy anterior (el
+backend): eso es lo que hace parecer que “el frontend nunca cambia”. Hay que dejar el build en verde para que el
+dominio empiece a mostrar el SPA.
+
 ### `Application failed to respond` o error 502
 
 El contenedor de Nginx escucha en `$PORT`, que Railway inyecta automáticamente (`docker-entrypoint.sh` sustituye
