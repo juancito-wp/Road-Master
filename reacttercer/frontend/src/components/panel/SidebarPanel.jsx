@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { GitBranch, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -6,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
  * Mantiene exactamente la misma estructura y estilo del panel de administración.
  */
 export default function SidebarPanel({ titulo, items, seccionActiva, onCambiarSeccion }) {
+  const [abierto, setAbierto] = useState(false);
   const navigate = useNavigate();
   const nombreUsuario = localStorage.getItem('nombreUsuario');
   const rolUsuario = localStorage.getItem('rolUsuario');
@@ -19,7 +21,33 @@ export default function SidebarPanel({ titulo, items, seccionActiva, onCambiarSe
   };
 
   return (
-    <aside className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-white/10 bg-slate-950 shadow-2xl">
+    <>
+      {/* En movil la barra lateral se oculta y se abre con el boton flotante */}
+      {abierto && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setAbierto(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        className={`fixed bottom-6 left-6 z-40 items-center gap-2 rounded-full bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition hover:bg-red-700 lg:hidden ${
+          abierto ? 'hidden' : 'flex'
+        }`}
+        aria-label="Abrir menú del panel"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+        Menú
+      </button>
+
+      <aside className={`fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-white/10 bg-slate-950 shadow-2xl transition-transform duration-300 lg:translate-x-0 ${
+        abierto ? 'translate-x-0' : '-translate-x-full'
+      }`}>
       {/* Header */}
       <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
         <GitBranch className="h-7 w-7 text-red-500" />
@@ -35,7 +63,10 @@ export default function SidebarPanel({ titulo, items, seccionActiva, onCambiarSe
           <button
             key={id}
             type="button"
-            onClick={() => onCambiarSeccion(id)}
+            onClick={() => {
+              onCambiarSeccion(id);
+              setAbierto(false);
+            }}
             className={`group relative flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-semibold text-slate-400 transition-all ${
               seccionActiva === id ? 'bg-red-600/10 text-white' : 'hover:bg-white/5 hover:text-slate-200'
             }`}
@@ -85,6 +116,7 @@ export default function SidebarPanel({ titulo, items, seccionActiva, onCambiarSe
         </button>
         <p className="mt-3 px-1 text-xs text-slate-500">© 2026 Road Master</p>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

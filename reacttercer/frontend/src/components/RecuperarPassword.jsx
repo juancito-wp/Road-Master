@@ -122,11 +122,11 @@ export default function RecuperarPassword({ cerrar }) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/70 px-6 py-6 backdrop-blur-sm"
       onClick={cerrar}
     >
       <div
-        className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl"
+        className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
 

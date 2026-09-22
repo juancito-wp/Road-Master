@@ -485,7 +485,7 @@ export default function PanelAdmin() {
     <div className="flex min-h-screen bg-slate-950">
       <SidebarAdmin seccionActiva={seccionActiva} onCambiarSeccion={setSeccionActiva} />
 
-      <div className="ml-64 flex-1 p-6 lg:p-8">
+      <div className="flex-1 p-4 pt-6 sm:p-6 lg:ml-64 lg:p-8">
         {(mensajeExito || comercial.mensaje) && (
           <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-green-400">
             {mensajeExito || comercial.mensaje}
@@ -513,8 +513,8 @@ export default function PanelAdmin() {
 
       {/* MODAL CREAR USUARIO */}
       {mostrarModalNuevoUsuario && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
             <h2 className="text-2xl font-bold text-white">Crear usuario</h2>
             <p className="mt-1 text-xs text-slate-400">El correo y el número de documento deben ser únicos en la base de datos.</p>
             {erroresNuevoUsuario.general && (
@@ -583,8 +583,8 @@ export default function PanelAdmin() {
 
       {/* MODAL EDITAR USUARIO */}
       {mostrarModalUsuario && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-2xl rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
             <h2 className="text-2xl font-bold text-white">Editar usuario</h2>
             <form onSubmit={guardarUsuario} className="mt-6 grid gap-4 sm:grid-cols-2">
               {[
@@ -631,8 +631,8 @@ export default function PanelAdmin() {
 
       {/* MODAL SERVICIO */}
       {mostrarModalServicio && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
             <h2 className="text-2xl font-bold text-white">{servicioEditando ? "Editar servicio" : "Agregar servicio"}</h2>
             <form onSubmit={guardarServicio} className="mt-6 space-y-4">
               <label className="block text-xs font-semibold uppercase text-slate-400">Nombre
@@ -655,8 +655,8 @@ export default function PanelAdmin() {
 
       {/* MODAL CONFIRMACIÓN ELIMINACIÓN */}
       {mostrarConfirmacion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-8 shadow-2xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-600/15">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -688,8 +688,8 @@ export default function PanelAdmin() {
 
       {/* MODAL CREAR / EDITAR MODELO */}
       {mostrarModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm">
+          <div className="my-auto w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-2xl">
             <h2 className="text-2xl font-bold text-white">
               {modoEdicion ? "Editar Modelo" : "Agregar Nuevo Modelo"}
             </h2>
@@ -699,7 +699,7 @@ export default function PanelAdmin() {
                 <input type="text" name="nombre" value={formulario.nombre} onChange={manejarCambio}
                   className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-red-500" required />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase">Marca</label>
                   <input type="text" name="marca" value={formulario.marca} onChange={manejarCambio}
@@ -711,7 +711,7 @@ export default function PanelAdmin() {
                     className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-2 text-white outline-none focus:border-red-500" required />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase">Categoría</label>
                   <input type="text" name="categoria" value={formulario.categoria} onChange={manejarCambio}

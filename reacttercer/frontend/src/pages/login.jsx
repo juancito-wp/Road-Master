@@ -319,8 +319,8 @@ export default function Login() {
 
       {/* ================= TARJETA DE BIENVENIDA DINÁMICA ================= */}
       {bienvenida && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/70 px-6 backdrop-blur-sm">
-          <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl">
+        <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-black/70 px-6 py-6 backdrop-blur-sm">
+          <div className="relative my-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-8 text-center shadow-2xl">
             {/* Brillo superior animado */}
             <div className="absolute inset-x-0 top-0 h-1 overflow-hidden">
               <div className="h-full w-1/2 animate-[welcome-slide_1.1s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-red-500 to-transparent" />

@@ -147,7 +147,7 @@ export default function PanelUsuario() {
     <div className="flex min-h-screen bg-slate-950">
       <SidebarEmpleado seccionActiva={seccionActiva} onCambiarSeccion={setSeccionActiva} />
 
-      <div className="ml-64 flex-1 p-6 lg:p-8">
+      <div className="flex-1 p-4 pt-6 sm:p-6 lg:ml-64 lg:p-8">
         {comercial.mensaje && (
           <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-4 text-green-400">
             {comercial.mensaje}

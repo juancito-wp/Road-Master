@@ -137,8 +137,8 @@ export default function Index3() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {modeloSeleccionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm">
-          <div className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-red-950/30">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/80 p-4 backdrop-blur-sm">
+          <div className="relative my-auto w-full max-w-4xl rounded-3xl border border-white/10 bg-slate-900 shadow-2xl shadow-red-950/30">
             <button
               type="button"
               onClick={cerrarModelo}
