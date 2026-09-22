@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import Carrusel from "../components/Carrusel";
+import Carrusel from "../components/carrusel";
 import Features from "../components/Features";
 import tractomula from "../assets/descarga.jpg";
 

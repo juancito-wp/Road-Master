@@ -5,7 +5,7 @@ import API from "../api/axios"; // 👈 Importamos la instancia de Axios
 import descarga from "../assets/descarga.jpg";
 import cuatroManos from "../assets/4 manos.jpg";
 import ranchera from "../assets/international ranchera.jpg";
-import eagle from "../assets/international Eagle 9400i.jpg";
+import eagle from "../assets/International Eagle 9400i.jpg";
 import international4700 from "../assets/international 4700.jpg";
 import gmc from "../assets/gmc.jpg";
 

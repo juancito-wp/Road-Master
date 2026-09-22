@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import cuatroManos from "../assets/4 manos.jpg";
 import internationalRanchera from "../assets/international ranchera.jpg";
-import internationalEagle from "../assets/international Eagle 9400i.jpg";
+import internationalEagle from "../assets/International Eagle 9400i.jpg";
 import international4700 from "../assets/international 4700.jpg";
 import kenworthK100 from "../assets/kenworth k100.jpg";
 import gmc from "../assets/gmc.jpg";

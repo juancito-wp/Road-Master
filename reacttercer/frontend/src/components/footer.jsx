@@ -1,5 +1,5 @@
 import { FaInstagram, FaFacebookF, FaWhatsapp } from "react-icons/fa";
-import logoRoadMaster from "../assets/logo road master.png";
+import logoRoadMaster from "../assets/Logo road master.png";
 
 export default function Footer() {
   return (
