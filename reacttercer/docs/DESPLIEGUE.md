@@ -203,14 +203,28 @@ railway environment edit --service-config <servicio-frontend> source.rootDirecto
 
 ### La página carga pero el API falla (CORS o peticiones a `localhost:8000`)
 
-`VITE_API_URL` se inyecta **en tiempo de compilación**, no en tiempo de ejecución:
+El síntoma típico es que al iniciar sesión aparece **“Error al conectar con el servidor.”** Ese mensaje se muestra
+cuando la respuesta no trae el campo `error`, lo que ocurre con un 404 de ruta (falta `/api`) o cuando el navegador
+bloquea la petición por CORS. `VITE_API_URL` se inyecta **en tiempo de compilación**, no en tiempo de ejecución:
 
-- Debe existir como variable del servicio **frontend** con el valor `https://<backend>.up.railway.app/api`
-  (con el sufijo `/api` incluido). Railway entrega las variables del servicio como *build args*, y el `Dockerfile`
-  ya las declara con `ARG VITE_API_URL`.
-- Si cambias su valor, hay que **volver a desplegar** el frontend (no basta reiniciar) para recompilar el SPA.
-- En el servicio del **backend**, `FRONTEND_ORIGIN` debe incluir el dominio público del frontend, si no el navegador
-  bloqueará las peticiones por CORS.
+- Debe existir como variable del servicio **frontend** y **terminar en `/api`**: `https://<backend>.up.railway.app/api`.
+  Sin ese sufijo el SPA llama a `/auth/login` en lugar de `/api/auth/login` y recibe un 404. Railway entrega las
+  variables del servicio como *build args* y el `Dockerfile` ya las declara con `ARG VITE_API_URL`; además
+  `frontend/src/api/axios.js` normaliza el sufijo por si se olvida.
+- Si cambias su valor hay que **volver a desplegar** el frontend (no basta reiniciar) para recompilar el SPA.
+- En el servicio del **backend**, `FRONTEND_ORIGIN` debe listar el origen exacto del frontend, **sin barra final**:
+  `https://<frontend>.up.railway.app`. Un `/` final o un `http://` de más rompe la comparación y el navegador
+  bloquea la petición por CORS.
+- Comprobación desde la terminal (el segundo comando debe imprimir `access-control-allow-origin`):
+
+  ```bash
+  curl -s https://<backend>.up.railway.app/api/health
+  curl -si -H "Origin: https://<frontend>.up.railway.app" \
+    https://<backend>.up.railway.app/api/health | grep -i access-control-allow-origin
+  ```
+
+- Truco para saber con qué URL quedó compilado el SPA: el valor de `VITE_API_URL` queda grabado dentro del bundle
+  publicado, así que se puede leer directamente del archivo `assets/index-*.js` del frontend.
 
 ### El build falla: `couldn't locate the dockerfile at path ...`
 
