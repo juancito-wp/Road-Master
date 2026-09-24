@@ -18,9 +18,11 @@ Si PowerShell bloquea la activación por política de scripts, puedes ejecutar e
 
 Configura `DATABASE_URL` y `JWT_SECRET` en `backend_fastapi/.env`. La base de datos y sus tablas se crean con `database.sql`.
 
-Para recuperación real de contraseña el sistema envía un código de seis dígitos que vence en 10 minutos. El envío usa la primera vía configurada, en este orden: **Mailgun**, **Resend** y **SMTP**.
+Para recuperación real de contraseña el sistema envía un código de seis dígitos que vence en 10 minutos. El envío usa la primera vía configurada, en este orden: **puente de Gmail**, **Mailgun**, **Resend** y **SMTP**.
 
-En Railway el SMTP saliente está bloqueado en los planes Free, Trial y Hobby, así que en producción hay que usar una API por HTTPS. La única que funciona sin comprar un dominio propio es **Mailgun**: cada cuenta trae un dominio sandbox. Configura `MAILGUN_API_KEY`, `MAILGUN_DOMAIN` (tu dominio `sandbox...mailgun.org`), `MAILGUN_REGION` y, si quieres cambiarlo, `MAILGUN_FROM`. El sandbox solo entrega a los destinatarios que autorices en *Send → Domains → tu sandbox → Setup*, con un máximo de 5.
+En Railway el SMTP saliente está bloqueado en los planes Free, Trial y Hobby, así que en producción el correo tiene que salir por HTTPS. Sin dominio propio, la única vía cuyos correos llegan a la bandeja de entrada es el **puente de Gmail**: un Web App de Google Apps Script que envía con `GmailApp` desde tu propia cuenta. Configura `GMAIL_BRIDGE_URL` y `GMAIL_BRIDGE_TOKEN`; el script y los pasos están en `docs/DESPLIEGUE.md`.
+
+Como respaldo sin dominio propio está **Mailgun**: cada cuenta trae un dominio sandbox. Configura `MAILGUN_API_KEY`, `MAILGUN_DOMAIN` (tu dominio `sandbox...mailgun.org`), `MAILGUN_REGION` y, si quieres cambiarlo, `MAILGUN_FROM`. El sandbox solo entrega a los destinatarios que autorices en *Send → Domains → tu sandbox → Setup*, con un máximo de 5, y sus correos suelen caer en spam porque el dominio compartido está castigado por reputación.
 
 Si más adelante compras y verificas un dominio propio, puedes pasar a **Resend** con `RESEND_API_KEY` y `RESEND_FROM` (mientras no verifiques dominio, `onboarding@resend.dev` solo envía al correo con el que te registraste en Resend).
 

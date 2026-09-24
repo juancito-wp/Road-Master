@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -196,6 +197,43 @@ def enviar_con_smtp(email: str, texto: str, html: str) -> None:
         raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación') from error
 
 
+def enviar_con_gmail_bridge(email: str, texto: str, html: str) -> None:
+    '''Envía el correo a través de un Web App de Google Apps Script.
+
+    Apps Script llama a GmailApp.sendEmail con la cuenta de Google de quien publicó el
+    script, así que el mensaje sale de un Gmail real: Gmail lo reconoce como propio y entra
+    a la bandeja de entrada. Es la vía que funciona sin dominio propio, porque los dominios
+    sandbox de los proveedores de correo están castigados por reputación y terminan en spam.
+    El secreto compartido viaja en el cuerpo, nunca en la URL, para que no quede en los logs.
+    '''
+    url = os.getenv('GMAIL_BRIDGE_URL')
+    token = os.getenv('GMAIL_BRIDGE_TOKEN')
+    if not url or not token:
+        raise HTTPException(status_code=503, detail='El servicio de correo no está configurado')
+    peticion = UrlRequest(
+        url,
+        data=json.dumps({
+            'token': token, 'to': email, 'subject': ASUNTO_RECUPERACION, 'text': texto, 'html': html,
+        }).encode(),
+        headers={'Content-Type': 'application/json'},
+        method='POST',
+    )
+    try:
+        with urlopen(peticion, timeout=30) as respuesta:
+            detalle = respuesta.read().decode(errors='replace')
+    except (HTTPError, URLError, OSError) as error:
+        logger.exception('El puente de Gmail no pudo enviar el correo de recuperación')
+        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación') from error
+    # Apps Script responde 302 hacia script.googleusercontent.com y urlopen sigue la redirección.
+    try:
+        fallo = json.loads(detalle).get('error')
+    except (ValueError, AttributeError):
+        fallo = None
+    if fallo:
+        logger.error('El puente de Gmail respondió con error: %s', fallo)
+        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación')
+
+
 def enviar_con_mailgun(email: str, texto: str, html: str) -> None:
     '''Envía el correo con la API HTTPS de Mailgun.
 
@@ -236,10 +274,14 @@ def enviar_con_mailgun(email: str, texto: str, html: str) -> None:
 def enviar_correo_recuperacion(email: str, codigo: str) -> None:
     '''Envía el código de recuperación por la primera vía configurada.
 
-    Orden: Mailgun (funciona sin dominio propio), Resend (exige dominio verificado) y, si
-    no hay ninguna clave, SMTP (solo sirve en local o en el plan Pro de Railway).
+    Orden: el puente de Gmail (única vía sin dominio propio que llega a la bandeja de
+    entrada), Mailgun, Resend (exige dominio verificado) y, si no hay nada configurado,
+    SMTP (solo sirve en local o en el plan Pro de Railway).
     '''
     texto, html = cuerpos_correo_recuperacion(codigo)
+    if os.getenv('GMAIL_BRIDGE_URL') and os.getenv('GMAIL_BRIDGE_TOKEN'):
+        enviar_con_gmail_bridge(email, texto, html)
+        return
     if os.getenv('MAILGUN_API_KEY') and os.getenv('MAILGUN_DOMAIN'):
         enviar_con_mailgun(email, texto, html)
         return

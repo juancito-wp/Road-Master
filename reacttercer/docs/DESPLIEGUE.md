@@ -87,7 +87,8 @@ Archivos de despliegue incluidos en el repositorio:
    | `IMPUESTO_PORCENTAJE` | `19` |
    | `OPENAI_API_KEY` | clave privada del chatbot (ver sección 5) |
    | `OPENAI_MODEL` | `gpt-4o-mini` |
-   | `MAILGUN_API_KEY` | recuperación de contraseña por la API HTTPS de Mailgun (necesaria aquí: Railway bloquea el SMTP saliente en Free, Trial y Hobby) |
+   | `GMAIL_BRIDGE_URL`, `GMAIL_BRIDGE_TOKEN` | recuperación de contraseña con el puente de Gmail (ver la subsección *Recuperación de contraseña sin dominio propio*) |
+   | `MAILGUN_API_KEY` | alternativa de recuperación de contraseña por la API HTTPS de Mailgun (Railway bloquea el SMTP saliente en Free, Trial y Hobby) |
    | `MAILGUN_DOMAIN` | tu dominio sandbox, `sandbox...mailgun.org`. Autoriza los destinatarios en *Send → Domains → tu sandbox → Setup* (máximo 5) |
    | `MAILGUN_REGION` | `us` o `eu`, según donde creaste la cuenta |
    | `RESEND_API_KEY`, `RESEND_FROM` | alternativa para cuando tengas un dominio propio verificado en Resend |
@@ -98,6 +99,48 @@ Archivos de despliegue incluidos en el repositorio:
    `{"status":"OK","mensaje":"Conexión exitosa"}` y la documentación queda en `/docs`.
 6. Si necesitas conservar las imágenes subidas por el administrador, monta un **Volume** en
    `/app/backend_fastapi/uploads`.
+
+### Recuperación de contraseña sin dominio propio
+
+Los planes Free, Trial y Hobby de Railway no permiten SMTP saliente, así que el correo tiene
+que salir por HTTPS. Mailgun no exige dominio, pero su dominio *sandbox* está castigado por
+reputación y sus correos terminan en la carpeta de spam. La única vía que sin dominio propio
+llega a la bandeja de entrada es enviar desde tu propio Gmail con un Web App de Apps Script.
+
+1. Entra a <https://script.google.com>, crea un proyecto nuevo y pega este código cambiando
+   `SECRET` por una cadena larga y aleatoria:
+
+   ```javascript
+   const SECRET = 'cambia-esto-por-un-secreto-largo-y-aleatorio';
+
+   function doPost(e) {
+     try {
+       const datos = JSON.parse(e.postData.contents);
+       if (datos.token !== SECRET) {
+         return ContentService.createTextOutput(JSON.stringify({ error: 'no autorizado' }))
+           .setMimeType(ContentService.MimeType.JSON);
+       }
+       GmailApp.sendEmail(datos.to, datos.subject, datos.text, {
+         htmlBody: datos.html,
+         name: 'Road Master',
+       });
+       return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+         .setMimeType(ContentService.MimeType.JSON);
+     } catch (error) {
+       return ContentService.createTextOutput(JSON.stringify({ error: String(error) }))
+         .setMimeType(ContentService.MimeType.JSON);
+     }
+   }
+   ```
+
+2. Guarda el proyecto y usa **Implementar → Nueva implementación → Web app** con *Ejecutar
+   como* **Yo** y *Quién tiene acceso* **Cualquier persona**. Autoriza los permisos cuando
+   Google los pida.
+3. Copia la URL de la implementación (termina en `/exec`) y añade al servicio del backend
+   `GMAIL_BRIDGE_URL` con esa URL y `GMAIL_BRIDGE_TOKEN` con el mismo secreto de `SECRET`.
+
+Los correos salen de tu cuenta de Gmail (hasta 100 destinatarios al día) y llegan a la
+bandeja de entrada porque Gmail los reconoce como propios.
 
 ---
 
