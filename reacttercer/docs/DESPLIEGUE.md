@@ -87,7 +87,11 @@ Archivos de despliegue incluidos en el repositorio:
    | `IMPUESTO_PORCENTAJE` | `19` |
    | `OPENAI_API_KEY` | clave privada del chatbot (ver sección 5) |
    | `OPENAI_MODEL` | `gpt-4o-mini` |
-   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | recuperación de contraseña |
+   | `MAILGUN_API_KEY` | recuperación de contraseña por la API HTTPS de Mailgun (necesaria aquí: Railway bloquea el SMTP saliente en Free, Trial y Hobby) |
+   | `MAILGUN_DOMAIN` | tu dominio sandbox, `sandbox...mailgun.org`. Autoriza los destinatarios en *Send → Domains → tu sandbox → Setup* (máximo 5) |
+   | `MAILGUN_REGION` | `us` o `eu`, según donde creaste la cuenta |
+   | `RESEND_API_KEY`, `RESEND_FROM` | alternativa para cuando tengas un dominio propio verificado en Resend |
+   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | alternativa de recuperación de contraseña: solo funciona en local o en el plan Pro |
 4. En **Settings → Networking** genera el dominio público. El contenedor escucha en `$PORT`,
    así que no cambies ese valor: Railway lo inyecta automáticamente.
 5. Verifica el despliegue: `https://<backend>.up.railway.app/api/health` debe responder

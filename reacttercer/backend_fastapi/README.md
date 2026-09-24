@@ -18,7 +18,13 @@ Si PowerShell bloquea la activación por política de scripts, puedes ejecutar e
 
 Configura `DATABASE_URL` y `JWT_SECRET` en `backend_fastapi/.env`. La base de datos y sus tablas se crean con `database.sql`.
 
-Para recuperación real de contraseña, configura también `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` y `SMTP_FROM`. El sistema envía un código de seis dígitos que vence en 10 minutos. En Gmail debes usar una contraseña de aplicación, no la contraseña personal de la cuenta.
+Para recuperación real de contraseña el sistema envía un código de seis dígitos que vence en 10 minutos. El envío usa la primera vía configurada, en este orden: **Mailgun**, **Resend** y **SMTP**.
+
+En Railway el SMTP saliente está bloqueado en los planes Free, Trial y Hobby, así que en producción hay que usar una API por HTTPS. La única que funciona sin comprar un dominio propio es **Mailgun**: cada cuenta trae un dominio sandbox. Configura `MAILGUN_API_KEY`, `MAILGUN_DOMAIN` (tu dominio `sandbox...mailgun.org`), `MAILGUN_REGION` y, si quieres cambiarlo, `MAILGUN_FROM`. El sandbox solo entrega a los destinatarios que autorices en *Send → Domains → tu sandbox → Setup*, con un máximo de 5.
+
+Si más adelante compras y verificas un dominio propio, puedes pasar a **Resend** con `RESEND_API_KEY` y `RESEND_FROM` (mientras no verifiques dominio, `onboarding@resend.dev` solo envía al correo con el que te registraste en Resend).
+
+En local puedes seguir usando SMTP con `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` y `SMTP_FROM`. Si hay claves de Mailgun o Resend, tienen prioridad sobre SMTP. En Gmail debes usar una contraseña de aplicación, no la contraseña personal de la cuenta.
 
 ## Ejecución
 

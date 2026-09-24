@@ -5,10 +5,14 @@ import secrets
 import smtplib
 import shutil
 import uuid
+from base64 import b64encode
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from email.message import EmailMessage
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request as UrlRequest, urlopen
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -120,20 +124,14 @@ def parse_price(value: str) -> Decimal:
     return price
 
 
-def enviar_correo_recuperacion(email: str, codigo: str) -> None:
-    smtp_host = os.getenv('SMTP_HOST')
-    smtp_user = os.getenv('SMTP_USER')
-    smtp_password = os.getenv('SMTP_PASSWORD')
-    smtp_from = os.getenv('SMTP_FROM', smtp_user)
-    if not smtp_host or not smtp_user or not smtp_password or not smtp_from:
-        raise HTTPException(status_code=503, detail='El servicio de correo no está configurado')
+ASUNTO_RECUPERACION = 'Recuperación de contraseña - Road Master'
+CORREO_RESEND_POR_DEFECTO = 'Road Master <onboarding@resend.dev>'
 
-    message = EmailMessage()
-    message['Subject'] = 'Recuperación de contraseña - Road Master'
-    message['From'] = smtp_from
-    message['To'] = email
-    message.set_content(f'Tu código de recuperación de Road Master es: {codigo}. Es válido durante 10 minutos.')
-    message.add_alternative(f'''<!doctype html>
+
+def cuerpos_correo_recuperacion(codigo: str) -> tuple[str, str]:
+    '''Cuerpo del correo de recuperación: texto plano y HTML.'''
+    texto = f'Tu código de recuperación de Road Master es: {codigo}. Es válido durante 10 minutos.'
+    html = f'''<!doctype html>
 <html><body style="margin:0;background:#f4f4f5;font-family:Arial,sans-serif;color:#fff">
 <div style="max-width:660px;margin:0 auto;background:#111827;padding:28px 30px 34px">
   <div style="text-align:center;color:#22d3ee;font-size:25px;font-weight:800;letter-spacing:2px">ROAD MASTER</div>
@@ -143,14 +141,113 @@ def enviar_correo_recuperacion(email: str, codigo: str) -> None:
   <div style="margin:26px 0 34px;text-align:center;color:#c026d3;font-size:38px;font-weight:800;letter-spacing:10px">{codigo}</div>
   <p>Este código es válido durante <strong>10 minutos</strong>.</p>
   <p>Si tú no solicitaste este cambio, puedes ignorar este mensaje.</p>
-</div></body></html>''', subtype='html')
+</div></body></html>'''
+    return texto, html
+
+
+def enviar_con_resend(api_key: str, email: str, texto: str, html: str) -> None:
+    '''Envía el correo con la API HTTPS de Resend.
+
+    Railway bloquea el SMTP saliente en los planes Free, Trial y Hobby, así que esta es la
+    vía que funciona en cualquier plan. La importación es diferida para que el backend siga
+    arrancando con la configuración local de SMTP aunque el paquete no esté instalado.
+    '''
+    try:
+        import resend
+    except ImportError as error:
+        raise HTTPException(status_code=503, detail='Falta la librería resend en el servidor') from error
+
+    resend.api_key = api_key
+    try:
+        resend.Emails.send({
+            'from': os.getenv('RESEND_FROM', CORREO_RESEND_POR_DEFECTO),
+            'to': [email],
+            'subject': ASUNTO_RECUPERACION,
+            'text': texto,
+            'html': html,
+        })
+    except Exception as error:
+        # El SDK y httpx lanzan tipos distintos de excepción; cualquiera deja el correo sin enviar.
+        logger.exception('Resend no pudo enviar el correo de recuperación')
+        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación') from error
+
+
+def enviar_con_smtp(email: str, texto: str, html: str) -> None:
+    smtp_host = os.getenv('SMTP_HOST')
+    smtp_user = os.getenv('SMTP_USER')
+    smtp_password = os.getenv('SMTP_PASSWORD')
+    smtp_from = os.getenv('SMTP_FROM', smtp_user)
+    if not smtp_host or not smtp_user or not smtp_password or not smtp_from:
+        raise HTTPException(status_code=503, detail='El servicio de correo no está configurado')
+
+    message = EmailMessage()
+    message['Subject'] = ASUNTO_RECUPERACION
+    message['From'] = smtp_from
+    message['To'] = email
+    message.set_content(texto)
+    message.add_alternative(html, subtype='html')
     try:
         with smtplib.SMTP(smtp_host, int(os.getenv('SMTP_PORT', '587')), timeout=15) as server:
             server.starttls()
             server.login(smtp_user, smtp_password)
             server.send_message(message)
-    except (OSError, smtplib.SMTPException):
-        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación')
+    except (OSError, smtplib.SMTPException) as error:
+        logger.exception('SMTP no pudo enviar el correo de recuperación')
+        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación') from error
+
+
+def enviar_con_mailgun(email: str, texto: str, html: str) -> None:
+    '''Envía el correo con la API HTTPS de Mailgun.
+
+    Mailgun provisiona un dominio sandbox a cada cuenta, así que es la única vía que
+    funciona sin comprar un dominio propio. A cambio, el dominio sandbox solo entrega a
+    los destinatarios autorizados en el panel (máximo 5). Se usa la librería estándar para
+    no sumar dependencias por una sola petición.
+    '''
+    api_key = os.getenv('MAILGUN_API_KEY')
+    dominio = os.getenv('MAILGUN_DOMAIN')
+    if not api_key or not dominio:
+        raise HTTPException(status_code=503, detail='El servicio de correo no está configurado')
+    base = 'https://api.eu.mailgun.net' if os.getenv('MAILGUN_REGION', 'us').lower() == 'eu' else 'https://api.mailgun.net'
+    cuerpo = urlencode({
+        'from': os.getenv('MAILGUN_FROM') or f'Road Master <postmaster@{dominio}>',
+        'to': email,
+        'subject': ASUNTO_RECUPERACION,
+        'text': texto,
+        'html': html,
+    }).encode()
+    peticion = UrlRequest(
+        f'{base}/v3/{dominio}/messages',
+        data=cuerpo,
+        headers={
+            'Authorization': f'Basic {b64encode(f"api:{api_key}".encode()).decode()}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        method='POST',
+    )
+    try:
+        with urlopen(peticion, timeout=15) as respuesta:
+            respuesta.read()
+    except (HTTPError, URLError, OSError) as error:
+        logger.exception('Mailgun no pudo enviar el correo de recuperación')
+        raise HTTPException(status_code=503, detail='No fue posible enviar el correo de recuperación') from error
+
+
+def enviar_correo_recuperacion(email: str, codigo: str) -> None:
+    '''Envía el código de recuperación por la primera vía configurada.
+
+    Orden: Mailgun (funciona sin dominio propio), Resend (exige dominio verificado) y, si
+    no hay ninguna clave, SMTP (solo sirve en local o en el plan Pro de Railway).
+    '''
+    texto, html = cuerpos_correo_recuperacion(codigo)
+    if os.getenv('MAILGUN_API_KEY') and os.getenv('MAILGUN_DOMAIN'):
+        enviar_con_mailgun(email, texto, html)
+        return
+    api_key = os.getenv('RESEND_API_KEY')
+    if api_key:
+        enviar_con_resend(api_key, email, texto, html)
+        return
+    enviar_con_smtp(email, texto, html)
 
 
 @app.get('/api/health')

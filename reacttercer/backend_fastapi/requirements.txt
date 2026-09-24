@@ -11,4 +11,5 @@ reportlab
 openpyxl
 pillow
 openai
+resend
 gunicorn
