@@ -1,7 +1,7 @@
 import Paginacion from '../Paginacion';
 import usePaginacion from '../../hooks/usePaginacion';
 
-const POR_PAGINA = 10;
+const POR_PAGINA = 6;
 
 export default function UsuariosAdmin({
   usuarios,
