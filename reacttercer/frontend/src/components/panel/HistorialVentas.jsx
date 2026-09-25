@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Filter, RotateCcw } from 'lucide-react';
 import { claseEstado, etiquetaEstado, formatearFecha, formatearMoneda } from '../../utils/formato';
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
 
 const claseCampo = 'mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-red-500';
+const POR_PAGINA = 10;
 
 /** Historial de ventas con filtros por fecha, cliente, producto, servicio, estado y valor. */
 export default function HistorialVentas({
@@ -11,6 +14,8 @@ export default function HistorialVentas({
 }) {
   const [borrador, setBorrador] = useState(filtros || {});
   useEffect(() => { setBorrador(filtros || {}); }, [filtros]);
+
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(ventas, POR_PAGINA);
 
   const ventasFacturadas = new Set((facturas || []).map((factura) => factura.ventaId));
   const cambiar = (e) => setBorrador((actual) => ({ ...actual, [e.target.name]: e.target.value }));
@@ -96,6 +101,7 @@ export default function HistorialVentas({
         {ventas.length === 0 ? (
           <p className="p-6 text-slate-400">No hay ventas que coincidan con los filtros seleccionados.</p>
         ) : (
+          <>
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-950 text-xs uppercase text-slate-400">
               <tr>
@@ -109,7 +115,7 @@ export default function HistorialVentas({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {ventas.map((venta) => (
+              {itemsPaginados.map((venta) => (
                 <tr key={venta.id}>
                   <td className="px-5 py-4 font-bold text-white">#{venta.id}</td>
                   <td className="px-5 py-4">{formatearFecha(venta.fecha)}</td>
@@ -158,6 +164,15 @@ export default function HistorialVentas({
               ))}
             </tbody>
           </table>
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalItems={totalItems}
+            porPagina={POR_PAGINA}
+            onCambiarPagina={irA}
+            etiqueta="ventas"
+          />
+          </>
         )}
       </div>
     </section>

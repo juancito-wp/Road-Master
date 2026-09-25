@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { Star } from 'lucide-react';
 import { IMAGEN_PLACEHOLDER } from '../../constants/imagenPlaceholder';
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
+
+const POR_PAGINA = 8;
 
 export default function ProductosAdmin({ modelos, productoMasCaro, onCrear, onEditar, onEliminar }) {
   const [busqueda, setBusqueda] = useState('');
@@ -9,6 +13,8 @@ export default function ProductosAdmin({ modelos, productoMasCaro, onCrear, onEd
     m.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     (m.marca && m.marca.toLowerCase().includes(busqueda.toLowerCase()))
   ) ?? [];
+
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(modelosFiltrados, POR_PAGINA);
 
   return (
     <div className="mt-6">
@@ -86,6 +92,7 @@ export default function ProductosAdmin({ modelos, productoMasCaro, onCrear, onEd
         ) : modelosFiltrados.length === 0 ? (
           <p className="p-8 text-center text-slate-400">No se encontraron modelos registrados.</p>
         ) : (
+          <>
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-950 text-xs uppercase text-slate-400 border-b border-white/10">
               <tr>
@@ -98,7 +105,7 @@ export default function ProductosAdmin({ modelos, productoMasCaro, onCrear, onEd
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {modelosFiltrados.map((modelo) => {
+              {itemsPaginados.map((modelo) => {
                 const id = modelo._id || modelo.id;
                 const esDestacado = productoMasCaro && (productoMasCaro._id || productoMasCaro.id) === id;
                 return (
@@ -153,6 +160,15 @@ export default function ProductosAdmin({ modelos, productoMasCaro, onCrear, onEd
               })}
             </tbody>
           </table>
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalItems={totalItems}
+            porPagina={POR_PAGINA}
+            onCambiarPagina={irA}
+            etiqueta="modelos"
+          />
+          </>
         )}
       </div>
     </div>

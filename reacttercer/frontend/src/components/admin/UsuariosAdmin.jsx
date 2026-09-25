@@ -1,3 +1,8 @@
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
+
+const POR_PAGINA = 10;
+
 export default function UsuariosAdmin({
   usuarios,
   onCambiarEstado,
@@ -5,6 +10,8 @@ export default function UsuariosAdmin({
   onEliminar,
   onNuevo,
 }) {
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(usuarios || [], POR_PAGINA);
+
   return (
     <section className="mt-8 scroll-m-28 overflow-x-auto rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
       <div className="border-b border-white/10 px-6 py-5">
@@ -39,7 +46,7 @@ export default function UsuariosAdmin({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {usuarios.map((usuario) => (
+              {itemsPaginados.map((usuario) => (
                 <tr key={usuario.id}>
                   <td className="px-6 py-4 font-semibold text-white">
                     {usuario.nombre} {usuario.apellido}
@@ -74,6 +81,14 @@ export default function UsuariosAdmin({
               ))}
             </tbody>
           </table>
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalItems={totalItems}
+            porPagina={POR_PAGINA}
+            onCambiarPagina={irA}
+            etiqueta="usuarios"
+          />
         </>
       )}
     </section>

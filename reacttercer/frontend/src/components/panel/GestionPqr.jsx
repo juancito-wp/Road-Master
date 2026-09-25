@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Filter, MessageSquarePlus, RotateCcw, Send } from 'lucide-react';
 import { claseEstado, etiquetaEstado, formatearFecha } from '../../utils/formato';
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
 
 const claseCampo = 'mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm normal-case text-white outline-none focus:border-red-500';
+const POR_PAGINA = 10;
 const TIPOS = ['peticion', 'queja', 'reclamo', 'sugerencia'];
 const ESTADOS = ['pendiente', 'en proceso', 'respondida', 'cerrada'];
 
@@ -19,6 +22,8 @@ export default function GestionPqr({
   const [errorLocal, setErrorLocal] = useState('');
 
   useEffect(() => { setBorrador(filtros || {}); }, [filtros]);
+
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(pqr, POR_PAGINA);
 
   const registrar = async (e) => {
     e.preventDefault();
@@ -123,7 +128,7 @@ export default function GestionPqr({
 
       <div className="space-y-4">
         {pqr.length === 0 && <p className="rounded-xl border border-white/10 bg-slate-900 p-6 text-slate-400">No hay PQR registradas.</p>}
-        {pqr.map((registro) => (
+        {itemsPaginados.map((registro) => (
           <article key={registro.id} className="rounded-xl border border-white/10 bg-slate-900 p-5 shadow-lg">
             <header className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -178,6 +183,18 @@ export default function GestionPqr({
             )}
           </article>
         ))}
+        {pqr.length > 0 && (
+          <div className="rounded-xl border border-white/10 bg-slate-900 shadow-lg">
+            <Paginacion
+              paginaActual={paginaActual}
+              totalPaginas={totalPaginas}
+              totalItems={totalItems}
+              porPagina={POR_PAGINA}
+              onCambiarPagina={irA}
+              etiqueta="PQR"
+            />
+          </div>
+        )}
       </div>
     </section>
   );

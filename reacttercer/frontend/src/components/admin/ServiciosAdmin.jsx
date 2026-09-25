@@ -1,4 +1,11 @@
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
+
+const POR_PAGINA = 10;
+
 export default function ServiciosAdmin({ servicios, onCrear, onEditar, onEliminar }) {
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(servicios || [], POR_PAGINA);
+
   return (
     <section className="mt-8 scroll-m-28 overflow-x-auto rounded-xl border border-white/10 bg-slate-900 shadow-2xl">
       <div className="flex flex-col justify-between gap-4 border-b border-white/10 px-6 py-5 sm:flex-row sm:items-center">
@@ -18,6 +25,7 @@ export default function ServiciosAdmin({ servicios, onCrear, onEditar, onElimina
       {!servicios || servicios.length === 0 ? (
         <p className="p-6 text-slate-400">No hay servicios registrados.</p>
       ) : (
+        <>
         <table className="w-full text-left text-sm text-slate-300">
           <thead className="bg-slate-950 text-xs uppercase text-slate-400">
             <tr>
@@ -28,7 +36,7 @@ export default function ServiciosAdmin({ servicios, onCrear, onEditar, onElimina
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {servicios.map((servicio) => (
+            {itemsPaginados.map((servicio) => (
               <tr key={servicio.id}>
                 <td className="px-6 py-4 font-semibold text-white">{servicio.nombre}</td>
                 <td className="px-6 py-4">{servicio.descripcion || 'Sin descripción'}</td>
@@ -53,6 +61,15 @@ export default function ServiciosAdmin({ servicios, onCrear, onEditar, onElimina
             ))}
           </tbody>
         </table>
+        <Paginacion
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          totalItems={totalItems}
+          porPagina={POR_PAGINA}
+          onCambiarPagina={irA}
+          etiqueta="servicios"
+        />
+        </>
       )}
     </section>
   );

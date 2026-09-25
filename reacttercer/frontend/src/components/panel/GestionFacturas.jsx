@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Download, Filter, RotateCcw } from 'lucide-react';
 import { claseEstado, etiquetaEstado, formatearFecha, formatearMoneda } from '../../utils/formato';
+import Paginacion from '../Paginacion';
+import usePaginacion from '../../hooks/usePaginacion';
 
 const claseCampo = 'mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-red-500';
+const POR_PAGINA = 10;
 
 /** Consulta de facturas por número, cliente, fecha o estado, con descarga en PDF. */
 export default function GestionFacturas({ facturas = [], filtros, onAplicarFiltros, onDescargar, onCambiarEstado, puedeGestionar = false }) {
   const [borrador, setBorrador] = useState(filtros || {});
   const [detalle, setDetalle] = useState(null);
   useEffect(() => { setBorrador(filtros || {}); }, [filtros]);
+
+  const { paginaActual, totalPaginas, totalItems, itemsPaginados, irA } = usePaginacion(facturas, POR_PAGINA);
 
   const cambiar = (e) => setBorrador((actual) => ({ ...actual, [e.target.name]: e.target.value }));
 
@@ -57,6 +62,7 @@ export default function GestionFacturas({ facturas = [], filtros, onAplicarFiltr
         {facturas.length === 0 ? (
           <p className="p-6 text-slate-400">No hay facturas que coincidan con los criterios de búsqueda.</p>
         ) : (
+          <>
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-950 text-xs uppercase text-slate-400">
               <tr>
@@ -71,7 +77,7 @@ export default function GestionFacturas({ facturas = [], filtros, onAplicarFiltr
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {facturas.map((factura) => (
+              {itemsPaginados.map((factura) => (
                 <tr key={factura.id}>
                   <td className="px-5 py-4 font-bold text-white">
                     {factura.numero}
@@ -123,6 +129,15 @@ export default function GestionFacturas({ facturas = [], filtros, onAplicarFiltr
               )}
             </tbody>
           </table>
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalItems={totalItems}
+            porPagina={POR_PAGINA}
+            onCambiarPagina={irA}
+            etiqueta="facturas"
+          />
+          </>
         )}
       </div>
     </section>
